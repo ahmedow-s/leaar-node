@@ -1,0 +1,31 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "backend",
+  "homepage": "https://github.com/ahmedow-s/leaar-node#readme",
+  "bugs": {
+    "url": "https://github.com/ahmedow-s/leaar-node/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmedow-s/leaar-node.git"
+  },
+  "license": "ISC",
+  "author": "MuhammadAziz",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^7.6.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.7",
+    "twilio": "^4.19.0",
+    "stripe": "^14.0.0",
+    "dotenv": "^16.3.1"
+  }
+}
