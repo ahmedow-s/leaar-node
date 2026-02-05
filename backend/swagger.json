@@ -1,0 +1,438 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Learn API",
+    "version": "1.0.0",
+    "description": "REST API с аутентификацией, продуктами, сообщениями и платежами",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "host": "localhost:3000",
+  "basePath": "/",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Enter token in format: Bearer <token>"
+    }
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["General"],
+        "summary": "Информация об API",
+        "responses": {
+          "200": {
+            "description": "API info"
+          }
+        }
+      }
+    },
+    "/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Регистрация нового пользователя",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string", "example": "John Doe"},
+                "email": {"type": "string", "example": "john@example.com"},
+                "password": {"type": "string", "example": "password123"},
+                "phone": {"type": "string", "example": "+1234567890"},
+                "age": {"type": "integer", "example": 25}
+              },
+              "required": ["name", "email", "password"]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "User registered successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Вход в систему",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "email": {"type": "string", "example": "john@example.com"},
+                "password": {"type": "string", "example": "password123"}
+              },
+              "required": ["email", "password"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Login successful, returns token"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Получить информацию о пользователе",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string",
+            "description": "User ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User found"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Users"],
+        "summary": "Обновить информацию пользователя",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string"},
+                "phone": {"type": "string"},
+                "age": {"type": "integer"}
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User updated"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Удалить пользователя",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/users": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Создать нового пользователя",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string"},
+                "email": {"type": "string"},
+                "password": {"type": "string"},
+                "phone": {"type": "string"},
+                "age": {"type": "integer"}
+              },
+              "required": ["name", "email", "password"]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "User created"
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      }
+    },
+    "/users/change-password": {
+      "put": {
+        "tags": ["Users"],
+        "summary": "Изменить пароль (требует аутентификацию)",
+        "security": [{"Bearer": []}],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "oldPassword": {"type": "string"},
+                "newPassword": {"type": "string"}
+              },
+              "required": ["oldPassword", "newPassword"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Password changed"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Получить все продукты",
+        "responses": {
+          "200": {
+            "description": "List of products"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Создать новый продукт",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string", "example": "Product Name"},
+                "price": {"type": "number", "example": 99.99},
+                "description": {"type": "string", "example": "Product description"},
+                "category": {"type": "string", "example": "Electronics"}
+              },
+              "required": ["name", "price"]
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Product created"
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Получить продукт по ID",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product found"
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Products"],
+        "summary": "Обновить продукт",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {"type": "string"},
+                "price": {"type": "number"},
+                "description": {"type": "string"},
+                "category": {"type": "string"}
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product updated"
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Products"],
+        "summary": "Удалить продукт",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product deleted"
+          },
+          "404": {
+            "description": "Product not found"
+          }
+        }
+      }
+    },
+    "/send-email": {
+      "post": {
+        "tags": ["Messaging"],
+        "summary": "Отправить email (требует аутентификацию)",
+        "security": [{"Bearer": []}],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "to": {"type": "string", "example": "recipient@example.com"},
+                "subject": {"type": "string", "example": "Hello"},
+                "text": {"type": "string", "example": "Message text"}
+              },
+              "required": ["to", "subject", "text"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email sent"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/send-sms": {
+      "post": {
+        "tags": ["Messaging"],
+        "summary": "Отправить SMS (требует аутентификацию)",
+        "security": [{"Bearer": []}],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "to": {"type": "string", "example": "+1234567890"},
+                "message": {"type": "string", "example": "SMS message"}
+              },
+              "required": ["to", "message"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SMS sent"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+    "/create-payment-intent": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Создать платежное намерение (требует аутентификацию)",
+        "security": [{"Bearer": []}],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "amount": {"type": "integer", "example": 5000},
+                "currency": {"type": "string", "example": "usd"}
+              },
+              "required": ["amount", "currency"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Payment intent created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    }
+  }
+}

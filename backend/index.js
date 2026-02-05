@@ -1,210 +1,125 @@
-// index.js - Главный файл сервера
-// Обновлено: добавлена аутентификация, отправка сообщений, платежи.
-// Для изучения: используйте middleware authenticateToken для защищенных маршрутов.
+  // index.js - Главный файл сервера
+  const express = require('express');
+  const swaggerUi = require('swagger-ui-express');
+  const swaggerDocument = require('./swagger.json');
+  require('dotenv').config();
 
-const express = require('express');
-const mongoose = require('mongoose');
-require('dotenv').config();
+  // Подключение к MongoDB
+  const connectDB = require('./src/config/db');
+  connectDB();
 
-// Импортируем контроллеры и сервисы
-const userController = require('./users/users');
-const productController = require('./products/products');
-const authController = require('./users/auth');
-const emailService = require('./utils/emailService');
-const smsService = require('./utils/smsService');
-const paymentService = require('./utils/payment');
+  // Импортируем маршруты
+  const authRoutes = require('./src/routes/authRoutes');
+  const userRoutes = require('./src/routes/userRoutes');
+  const productRoutes = require('./src/routes/productRoutes');
+  const messagingRoutes = require('./src/routes/messagingRoutes');
+  const paymentRoutes = require('./src/routes/paymentRoutes');
 
-const app = express();
-const port = 3000;
+  const app = express();
+  const port = process.env.PORT || 3000;
 
-// Middleware для парсинга JSON тел запросов
-// express.json() преобразует JSON в объекте req.body
-app.use(express.json());
+  // ============ MIDDLEWARE ============
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-// Подключение к MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('Connected to MongoDB');
-}).catch(err => {
-  console.error('Error connecting to MongoDB:', err);
-});
+  // ============ SWAGGER ДОКУМЕНТАЦИЯ ============
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-// Маршруты для пользователей
-// GET /users/:id - получить пользователя по ID
-app.get('/users/:id', async (req, res) => {
-  try {
-    const user = await userController.getUserById(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  // ============ API МАРШРУТЫ ============
+  // Аутентификация
+  app.use('/auth', authRoutes);
 
-// POST /users - создать нового пользователя
-app.post('/users', async (req, res) => {
-  try {
-    const user = await userController.createUser(req.body);
-    res.status(201).json(user);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+  // Вспомогательные redirect маршруты для удобства
+  app.post('/register', (req, res) => {
+    res.status(301).json({
+      error: 'Use /auth/register instead',
+      redirect: 'POST /auth/register',
+      hint: 'All auth routes are under /auth prefix'
+    });
+  });
 
-// PUT /users/:id - обновить пользователя
-app.put('/users/:id', async (req, res) => {
-  try {
-    const user = await userController.updateUser(req.params.id, req.body);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json(user);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+  app.post('/login', (req, res) => {
+    res.status(301).json({
+      error: 'Use /auth/login instead',
+      redirect: 'POST /auth/login',
+      hint: 'All auth routes are under /auth prefix'
+    });
+  });
 
-// DELETE /users/:id - удалить пользователя
-app.delete('/users/:id', async (req, res) => {
-  try {
-    const user = await userController.deleteUser(req.params.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json({ message: 'User deleted' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  // Пользователи
+  app.use('/users', userRoutes);
 
-// Маршруты аутентификации
-// POST /register - Регистрация
-app.post('/register', async (req, res) => {
-  try {
-    const { user, token } = await authController.register(req.body);
-    res.status(201).json({ user, token });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+  // Продукты
+  app.use('/products', productRoutes);
 
-// POST /login - Логин
-app.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const { user, token } = await authController.login(email, password);
-    res.json({ user, token });
-  } catch (err) {
-    res.status(401).json({ error: err.message });
-  }
-});
+  // Сообщения (Email, SMS)
+  app.use('/messaging', messagingRoutes);
 
-// Защищенные маршруты пользователей
-// PUT /users/change-password - Изменение пароля
-app.put('/users/change-password', authController.authenticateToken, async (req, res) => {
-  try {
-    const { oldPassword, newPassword } = req.body;
-    const result = await userController.changePassword(req.userId, oldPassword, newPassword);
-    res.json(result);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+  // Платежи
+  app.use('/payments', paymentRoutes);
 
-// Маршруты для отправки сообщений
-// POST /send-email - Отправка email
-app.post('/send-email', authController.authenticateToken, async (req, res) => {
-  try {
-    const { to, subject, text } = req.body;
-    await emailService.sendEmail(to, subject, text);
-    res.json({ message: 'Email sent' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  // ============ КОРНЕВОЙ МАРШРУТ ============
+  app.get('/', (req, res) => {
+    res.json({
+      message: '🎉 Добро пожаловать в API Leaar!',
+      version: '1.0.0',
+      documentation: `http://localhost:${port}/api-docs`,
+      endpoints: {
+        auth: {
+          register: 'POST /auth/register',
+          login: 'POST /auth/login'
+        },
+        users: {
+          getAll: 'GET /users',
+          getById: 'GET /users/:id',
+          create: 'POST /users',
+          update: 'PUT /users/:id',
+          delete: 'DELETE /users/:id',
+          changePassword: 'PUT /users/change-password'
+        },
+        products: {
+          getAll: 'GET /products',
+          getById: 'GET /products/:id',
+          create: 'POST /products',
+          update: 'PUT /products/:id',
+          delete: 'DELETE /products/:id'
+        },
+        messaging: {
+          sendEmail: 'POST /messaging/email',
+          sendSMS: 'POST /messaging/sms'
+        },
+        payments: {
+          createIntent: 'POST /payments/intent'
+        }
+      }
+    });
+  });
 
-// POST /send-sms - Отправка SMS
-app.post('/send-sms', authController.authenticateToken, async (req, res) => {
-  try {
-    const { to, message } = req.body;
-    await smsService.sendSMS(to, message);
-    res.json({ message: 'SMS sent' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  // ============ ОБРАБОТКА ОШИБОК 404 ============
+  app.use((req, res) => {
+    res.status(404).json({
+      error: 'Route not found',
+      path: req.path,
+      method: req.method,
+      availableEndpoints: 'Visit http://localhost:' + port + '/api-docs'
+    });
+  });
 
-// Маршруты платежей
-// POST /create-payment-intent - Создание платежного намерения
-app.post('/create-payment-intent', authController.authenticateToken, async (req, res) => {
-  try {
-    const { amount, currency } = req.body;
-    const paymentIntent = await paymentService.createPaymentIntent(amount, currency);
-    res.json(paymentIntent);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  // ============ ОБРАБОТКА ОШИБОК ============
+  app.use((err, req, res, next) => {
+    console.error('❌ Error:', err);
+    res.status(err.status || 500).json({
+      error: err.message || 'Internal server error',
+      path: req.path
+    });
+  });
 
-// Маршруты для продуктов
-// GET /products - получить все продукты
-app.get('/products', async (req, res) => {
-  try {
-    const products = await productController.getAllProducts();
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+  // ============ ЗАПУСК СЕРВЕРА ============
+  app.listen(port, () => {
+    console.log('\n🚀 ========================================');
+    console.log(`🚀 Server started on port ${port}`);
+    console.log(`📚 Swagger docs: http://localhost:${port}/api-docs`);
+    console.log('🚀 ========================================\n');
+  });
 
-// GET /products/:id - получить продукт по ID
-app.get('/products/:id', async (req, res) => {
-  try {
-    const product = await productController.getProductById(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.json(product);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /products - создать новый продукт
-app.post('/products', async (req, res) => {
-  try {
-    const product = await productController.createProduct(req.body);
-    res.status(201).json(product);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// PUT /products/:id - обновить продукт
-app.put('/products/:id', async (req, res) => {
-  try {
-    const product = await productController.updateProduct(req.params.id, req.body);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.json(product);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// DELETE /products/:id - удалить продукт
-app.delete('/products/:id', async (req, res) => {
-  try {
-    const product = await productController.deleteProduct(req.params.id);
-    if (!product) return res.status(404).json({ message: 'Product not found' });
-    res.json({ message: 'Product deleted' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Корневой маршрут
-app.get('/', (req, res) => {
-  res.send('Добро пожаловать в API с аутентификацией, сообщениями и платежами!');
-});
-
-// Запуск сервера
-// app.listen() запускает сервер на указанном порту
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-});
+  module.exports = app;
