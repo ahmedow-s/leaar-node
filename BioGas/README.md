@@ -49,10 +49,39 @@ npm start
 
 Сервер запустится на `http://localhost:5000`
 
+## 🚀 Деплой на Vercel (Production-ready)
+
+1. Установите Vercel CLI и авторизуйтесь:
+```bash
+npm i -g vercel
+vercel login
+```
+
+2. Убедитесь, что в `./vercel.json` присутствует конфигурация (есть в проекте).
+
+3. В Vercel добавьте переменные окружения (Project Settings → Environment Variables):
+- `MONGODB_URI` (строка подключения к MongoDB Atlas)
+- `JWT_SECRET`
+- `ADMIN_SECRET`
+- `CORS_ORIGIN` (ваш фронтенд URL)
+
+4. Запустите деплой из корня проекта:
+```bash
+vercel --prod
+```
+
+После успешного деплоя ваша API будет доступна по адресу, который вернёт Vercel, и Swagger — по `<YOUR_URL>/api-docs`.
+
+### Примечания по безопасности
+- Никогда не коммитите `.env` в репозиторий. 
+
+- Меняйте пароли по умолчанию и `ADMIN_SECRET` перед деплоем.
+- Используйте MongoDB Atlas с IP whitelist и настроенными пользователями.
+
 ## 📡 API Endpoints
 
 ### Аутентификация
-
+sd
 #### Регистрация
 ```
 POST /api/auth/register
@@ -302,3 +331,6 @@ Your Name
 ---
 
 **Помощь?** Создайте issue или свяжитесь с поддержкой.
+#   B i o G a s - B a c k e n d 
+ 
+ 

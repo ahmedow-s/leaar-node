@@ -1,0 +1,86 @@
+
+
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Leaar API",
+    "version": "1.0.0",
+    "description": "REST API с аутентификацией, продуктами, сообщениями и платежами"
+  },
+  "host": "localhost:3000",
+  "basePath": "/",
+  "schemes": ["http"],
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "paths": {
+    "/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Регистрация пользователя",
+        "parameters": [{
+          "in": "body",
+          "name": "body",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "email": {"type": "string"},
+              "password": {"type": "string"},
+              "phone": {"type": "string"},
+              "age": {"type": "number"}
+            }
+          }
+        }],
+        "responses": {"201": {"description": "User created"}}
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Вход в систему",
+        "parameters": [{
+          "in": "body",
+          "name": "body",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "email": {"type": "string"},
+              "password": {"type": "string"}
+            }
+          }
+        }],
+        "responses": {"200": {"description": "Token returned"}}
+      }
+    },
+    "/products": {
+      "get": {
+        "tags": ["Products"],
+        "summary": "Получить все продукты",
+        "responses": {"200": {"description": "List of products"}}
+      },
+      "post": {
+        "tags": ["Products"],
+        "summary": "Создать продукт",
+        "parameters": [{
+          "in": "body",
+          "name": "body",
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "price": {"type": "number"},
+              "description": {"type": "string"},
+              "category": {"type": "string"}
+            }
+          }
+        }],
+        "responses": {"201": {"description": "Product created"}}
+      }
+    }
+  }
+}

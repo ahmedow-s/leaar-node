@@ -1,5 +1,6 @@
 // ============ SWAGGER/OPENAPI DOCUMENTATION ============
 const swaggerJsdoc = require('swagger-jsdoc');
+const path = require('path');
 
 const options = {
   definition: {
@@ -17,10 +18,7 @@ const options = {
       }
     },
     servers: [
-      {
-        url: `http://localhost:${process.env.PORT || 5000}`,
-        description: 'Development server'
-      }
+        { url: process.env.BASE_URL || 'https://bio-gas-backend.vercel.app', description: 'Production/Dev server' }
     ],
     components: {
       securitySchemes: {
@@ -131,10 +129,25 @@ const options = {
     ]
   },
   apis: [
-    './src/routes/authRoutes.js',
-    './src/routes/userRoutes.js'
+    path.join(__dirname, '..', 'routes', '*.js')
   ]
 };
 
-const swaggerSpec = swaggerJsdoc(options);
+let swaggerSpec;
+try {
+  swaggerSpec = swaggerJsdoc(options);
+} catch (err) {
+  console.error('Failed to generate swagger spec:', err && err.message ? err.message : err);
+  // Fallback minimal spec so Swagger UI doesn't crash in production
+  swaggerSpec = {
+    openapi: '3.0.0',
+    info: {
+      title: 'BioGas Authentication API (fallback)',
+      version: '1.0.0',
+      description: 'Fallback Swagger spec - original generation failed'
+    },
+    paths: {}
+  };
+}
+
 module.exports = swaggerSpec;
